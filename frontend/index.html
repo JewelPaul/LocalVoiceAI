@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LocalVoiceAI</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <!-- ═══════════════════ HEADER ═══════════════════ -->
+  <header class="app-header">
+    <div class="header-left">
+      <span class="logo">🎙️ LocalVoiceAI</span>
+    </div>
+    <div class="header-center">
+      <span id="statusDot" class="status-dot disconnected"></span>
+      <span id="statusText" class="status-text">Disconnected</span>
+    </div>
+    <div class="header-right">
+      <label for="modelSelect" class="model-label">Model:</label>
+      <select id="modelSelect" class="model-select">
+        <option value="">Loading...</option>
+      </select>
+    </div>
+  </header>
+
+  <!-- ═══════════════════ MAIN LAYOUT ═══════════════════ -->
+  <main class="main-layout">
+    <!-- ─── Left Column ─── -->
+    <div class="left-col">
+
+      <!-- Voice Panel -->
+      <section class="panel voice-panel">
+        <h2 class="panel-title">🎤 Voice</h2>
+        <div class="voice-center">
+          <button id="micBtn" class="mic-btn" title="Toggle recording">
+            <span class="mic-icon">🎙️</span>
+          </button>
+          <div id="recordingStatus" class="recording-status idle">Idle</div>
+        </div>
+        <canvas id="waveformCanvas" class="waveform-canvas" width="380" height="60"></canvas>
+        <div id="liveTranscription" class="live-transcription" aria-live="polite">
+          <span class="placeholder">Your speech will appear here…</span>
+        </div>
+      </section>
+
+      <!-- Chat Panel -->
+      <section class="panel chat-panel">
+        <h2 class="panel-title">💬 Chat</h2>
+        <div id="chatHistory" class="chat-history" aria-live="polite"></div>
+        <div class="chat-input-row">
+          <input id="chatInput" class="chat-input" type="text" placeholder="Type a message…" autocomplete="off" />
+          <button id="sendBtn" class="send-btn">Send</button>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ─── Right Column ─── -->
+    <div class="right-col">
+
+      <!-- Tool Activity Panel -->
+      <section class="panel tool-panel">
+        <h2 class="panel-title">⚙️ Tool Activity</h2>
+
+        <div class="tool-running-section">
+          <span class="section-label">Currently Running:</span>
+          <div id="currentTool" class="current-tool idle">
+            <span class="idle-text">No active tool</span>
+          </div>
+        </div>
+
+        <div class="tool-history-section">
+          <span class="section-label">Tool History</span>
+          <div id="toolHistory" class="tool-history"></div>
+        </div>
+      </section>
+
+      <!-- Permissions Panel -->
+      <section class="panel permissions-panel">
+        <h2 class="panel-title">🔒 Permissions</h2>
+        <div id="permissionsList" class="permissions-list">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ═══════════════════ TASK PROGRESS ═══════════════════ -->
+  <div id="taskProgressBar" class="task-progress hidden">
+    <div class="task-progress-inner">
+      <span id="taskProgressLabel" class="task-label">Processing…</span>
+      <div class="progress-track">
+        <div id="progressFill" class="progress-fill"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ CONFIRMATION MODAL ═══════════════════ -->
+  <div id="confirmModal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <h3 class="modal-title">⚠️ Action Confirmation Required</h3>
+      <p id="confirmDescription" class="modal-desc"></p>
+      <div id="confirmToolDetails" class="modal-tool-details"></div>
+      <div class="modal-buttons">
+        <button id="confirmAllow" class="btn btn-allow">Allow Once</button>
+        <button id="confirmAlways" class="btn btn-always">Allow Always</button>
+        <button id="confirmCancel" class="btn btn-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/tools.js"></script>
+  <script src="/static/js/voice.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

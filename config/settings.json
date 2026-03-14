@@ -1,0 +1,19 @@
+{
+  "ollama": {
+    "base_url": "http://localhost:11434",
+    "default_model": "qwen2.5:7b",
+    "timeout": 60
+  },
+  "voice": {
+    "whisper_model": "base",
+    "language": "en",
+    "tts_engine": "auto"
+  },
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8000
+  },
+  "workspace": {
+    "base_path": "workspace"
+  }
+}

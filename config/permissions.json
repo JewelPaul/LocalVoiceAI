@@ -1,0 +1,10 @@
+{
+  "files": true,
+  "downloads": true,
+  "browser": true,
+  "email": false,
+  "ocr": true,
+  "images": true,
+  "video": true,
+  "spreadsheets": true
+}
