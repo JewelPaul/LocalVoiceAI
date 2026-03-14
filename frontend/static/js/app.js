@@ -1,10 +1,11 @@
 /**
  * app.js – Main application logic
- * Connects everything: WebSocket, Chat, Voice, Tools, Permissions
+ * Connects WebSocket, Chat, Voice, Tools, and Settings/Permissions.
+ * Minimal voice-first UI: no progress bar, inline voice state display.
  */
 
-// Named constants
 const MAX_CONTEXT_MESSAGES = 20;
+
 const state = {
   ws: null,
   wsReady: false,
@@ -13,38 +14,40 @@ const state = {
   pendingConfirmId: null,
 };
 
-// ── DOM refs ─────────────────────────────────────────────────────────────────
+// ── DOM refs ──────────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
-const statusDot     = $('statusDot');
-const statusText    = $('statusText');
-const modelSelect   = $('modelSelect');
-const chatHistory   = $('chatHistory');
-const chatInput     = $('chatInput');
-const sendBtn       = $('sendBtn');
-const micBtn        = $('micBtn');
-const recordingStatus = $('recordingStatus');
+
+const statusDot       = $('statusDot');
+const statusText      = $('statusText');
+const connectionDot   = $('connectionDot');
+const modelSelect     = $('modelSelect');
+const chatHistoryEl   = $('chatHistory');
+const chatInput       = $('chatInput');
+const sendBtn         = $('sendBtn');
+const micBtn          = $('micBtn');
+const voiceState      = $('voiceState');
 const liveTranscription = $('liveTranscription');
-const confirmModal  = $('confirmModal');
-const confirmDesc   = $('confirmDescription');
-const confirmDetails = $('confirmToolDetails');
-const confirmAllow  = $('confirmAllow');
-const confirmAlways = $('confirmAlways');
-const confirmCancel = $('confirmCancel');
-const taskProgressBar = $('taskProgressBar');
-const taskProgressLabel = $('taskProgressLabel');
-const progressFill  = $('progressFill');
+const confirmModal    = $('confirmModal');
+const confirmDesc     = $('confirmDescription');
+const confirmDetails  = $('confirmToolDetails');
+const confirmAllow    = $('confirmAllow');
+const confirmAlways   = $('confirmAlways');
+const confirmCancel   = $('confirmCancel');
+const settingsBtn     = $('settingsBtn');
+const settingsModal   = $('settingsModal');
+const closeSettings   = $('closeSettings');
 const permissionsList = $('permissionsList');
 
-// ── Permission metadata ───────────────────────────────────────────────────────
+// ── Permission metadata ────────────────────────────────────────────────────────
 const PERM_META = {
-  files:       { icon: '📁', label: 'Files' },
-  downloads:   { icon: '⬇️', label: 'Downloads' },
-  browser:     { icon: '🌐', label: 'Browser' },
-  email:       { icon: '📧', label: 'Email' },
-  ocr:         { icon: '🔍', label: 'OCR' },
-  images:      { icon: '🖼️', label: 'Images' },
-  video:       { icon: '🎬', label: 'Video' },
-  spreadsheets:{ icon: '📊', label: 'Spreadsheets' },
+  files:        { icon: '📁', label: 'Files' },
+  downloads:    { icon: '⬇', label: 'Downloads' },
+  browser:      { icon: '🌐', label: 'Browser' },
+  email:        { icon: '📧', label: 'Email' },
+  ocr:          { icon: '🔍', label: 'OCR' },
+  images:       { icon: '🖼', label: 'Images' },
+  video:        { icon: '🎬', label: 'Video' },
+  spreadsheets: { icon: '📊', label: 'Spreadsheets' },
 };
 
 // ── WebSocket ─────────────────────────────────────────────────────────────────
@@ -82,12 +85,12 @@ function handleServerMessage(msg) {
       break;
     case 'chat':
       appendChatMsg('assistant', msg.message);
-      hideProgress();
+      setVoiceState('idle');
       setSendBusy(false);
       break;
     case 'tool_start':
       toolDisplay.onToolStart(msg.tool, msg.args);
-      showProgress(`Running ${msg.tool}…`);
+      setVoiceState('thinking');
       break;
     case 'tool_end':
       toolDisplay.onToolEnd(msg.tool, msg.status, msg.duration_ms, msg.result_summary);
@@ -99,11 +102,11 @@ function handleServerMessage(msg) {
       showConfirmModal(msg);
       break;
     case 'transcription':
-      showTranscription(msg.text);
+      showLiveTranscription(msg.text);
       break;
     case 'error':
-      appendChatMsg('assistant', `⚠️ Error: ${msg.message}`);
-      hideProgress();
+      appendChatMsg('assistant', `⚠ ${msg.message}`);
+      setVoiceState('idle');
       setSendBusy(false);
       break;
   }
@@ -111,7 +114,9 @@ function handleServerMessage(msg) {
 
 // ── Status helpers ────────────────────────────────────────────────────────────
 function setStatus(s) {
-  statusDot.className = `status-dot ${s}`;
+  const cls = `status-dot ${s}`;
+  statusDot.className = cls;
+  connectionDot.className = `conn-dot ${s}`;
   statusText.textContent =
     s === 'connected'    ? 'Connected' :
     s === 'connecting'   ? 'Connecting…' :
@@ -119,10 +124,7 @@ function setStatus(s) {
 }
 
 function updateOllamaStatus(msg) {
-  if (msg.ollama_connected) {
-    setStatus('connected');
-  }
-  // Populate model dropdown
+  if (msg.ollama_connected) setStatus('connected');
   const models = msg.models || [];
   modelSelect.innerHTML = '';
   if (models.length === 0) {
@@ -142,12 +144,29 @@ function updateOllamaStatus(msg) {
   }
 }
 
+// ── Voice state label ─────────────────────────────────────────────────────────
+function setVoiceState(s, msg) {
+  const label =
+    s === 'recording'  ? 'Listening…' :
+    s === 'processing' ? 'Processing…' :
+    s === 'thinking'   ? 'Thinking…' :
+    s === 'error'      ? (msg || 'Error') :
+    'Tap microphone to speak';
+
+  voiceState.textContent = label;
+  voiceState.className   = `voice-state${s !== 'idle' ? ' ' + s : ''}`;
+}
+
+function showLiveTranscription(text) {
+  liveTranscription.textContent = text || '';
+}
+
 // ── Chat ──────────────────────────────────────────────────────────────────────
 function sendMessage(text) {
   text = text.trim();
   if (!text) return;
   if (!state.wsReady) {
-    appendChatMsg('assistant', '⚠️ Not connected. Please wait…');
+    appendChatMsg('assistant', '⚠ Not connected. Please wait…');
     return;
   }
 
@@ -164,7 +183,7 @@ function sendMessage(text) {
 
   chatInput.value = '';
   setSendBusy(true);
-  showProgress('Thinking…', 15);
+  setVoiceState('thinking');
 }
 
 function appendChatMsg(role, content) {
@@ -177,53 +196,54 @@ function appendChatMsg(role, content) {
 
   const roleLabel = document.createElement('div');
   roleLabel.className = 'msg-role';
-  roleLabel.textContent = role === 'user' ? '👤 You' : '🤖 Assistant';
+  roleLabel.textContent = role === 'user' ? 'You' : 'AI';
 
   const text = document.createElement('div');
   text.textContent = content;
 
   div.appendChild(roleLabel);
   div.appendChild(text);
-  chatHistory.appendChild(div);
-  chatHistory.scrollTop = chatHistory.scrollHeight;
+  chatHistoryEl.appendChild(div);
+  chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
 }
 
 function setSendBusy(busy) {
-  sendBtn.disabled = busy;
+  sendBtn.disabled  = busy;
   chatInput.disabled = busy;
 }
 
 // ── Voice ─────────────────────────────────────────────────────────────────────
 const recorder = new VoiceRecorder({
   onTranscription(text) {
-    showTranscription(text);
+    showLiveTranscription(text);
     sendMessage(text);
   },
   onStatusChange(status, msg) {
-    updateMicUI(status, msg);
+    micBtn.classList.toggle('recording', status === 'recording');
+    setVoiceState(status, msg);
+    if (status === 'idle') showLiveTranscription('');
   },
 });
 
-function updateMicUI(status, msg) {
-  micBtn.classList.toggle('recording', status === 'recording');
-  recordingStatus.className = `recording-status ${status === 'recording' ? 'recording' : status === 'processing' ? 'processing' : 'idle'}`;
-  recordingStatus.textContent =
-    status === 'recording'   ? '⏺ Recording' :
-    status === 'processing'  ? '⏳ Processing' :
-    status === 'error'       ? `❌ ${msg}` :
-    'Idle';
-}
+micBtn.addEventListener('click', () => recorder.toggle());
 
-function showTranscription(text) {
-  liveTranscription.innerHTML = '';
-  liveTranscription.textContent = text;
-}
+// ── Settings modal ────────────────────────────────────────────────────────────
+settingsBtn.addEventListener('click', () => {
+  settingsModal.classList.remove('hidden');
+});
+closeSettings.addEventListener('click', () => {
+  settingsModal.classList.add('hidden');
+});
+settingsModal.addEventListener('click', e => {
+  if (e.target === settingsModal) settingsModal.classList.add('hidden');
+});
 
 // ── Confirmation Modal ────────────────────────────────────────────────────────
 function showConfirmModal(msg) {
   state.pendingConfirmId = msg.id;
-  confirmDesc.textContent = `The AI wants to perform a sensitive action:`;
-  confirmDetails.textContent = `Tool: ${msg.tool}\nArgs: ${JSON.stringify(msg.args, null, 2)}\n\n${msg.description || ''}`;
+  confirmDesc.textContent = 'The AI wants to perform a sensitive action:';
+  confirmDetails.textContent =
+    `Tool: ${msg.tool}\nArgs: ${JSON.stringify(msg.args, null, 2)}\n\n${msg.description || ''}`;
   confirmModal.classList.remove('hidden');
 }
 
@@ -251,25 +271,12 @@ confirmCancel.addEventListener('click', () => {
   }
   hideConfirmModal();
 });
-
-// Click outside modal to cancel
 confirmModal.addEventListener('click', e => {
   if (e.target === confirmModal) {
     state.ws?.send(JSON.stringify({ type: 'cancel', id: state.pendingConfirmId }));
     hideConfirmModal();
   }
 });
-
-// ── Progress Bar ─────────────────────────────────────────────────────────────
-function showProgress(label, pct) {
-  taskProgressBar.classList.remove('hidden');
-  taskProgressLabel.textContent = label;
-  if (pct !== undefined) progressFill.style.width = `${pct}%`;
-}
-function hideProgress() {
-  taskProgressBar.classList.add('hidden');
-  progressFill.style.width = '0%';
-}
 
 // ── Permissions ───────────────────────────────────────────────────────────────
 async function loadPermissions() {
@@ -301,7 +308,7 @@ function renderPermissions(perms) {
 
   permissionsList.querySelectorAll('input[type=checkbox]').forEach(cb => {
     cb.addEventListener('change', async () => {
-      const key = cb.dataset.key;
+      const key   = cb.dataset.key;
       const value = cb.checked;
       try {
         await fetch('/api/permissions', {
@@ -309,9 +316,8 @@ function renderPermissions(perms) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ permissions: { [key]: value } }),
         });
-      } catch (e) {
-        console.error('Failed to update permission:', e);
-        cb.checked = !value; // revert
+      } catch {
+        cb.checked = !value; // revert on failure
       }
     });
   });
@@ -325,9 +331,6 @@ chatInput.addEventListener('keydown', e => {
     sendMessage(chatInput.value);
   }
 });
-
-micBtn.addEventListener('click', () => recorder.toggle());
-
 modelSelect.addEventListener('change', () => {
   state.model = modelSelect.value;
 });
