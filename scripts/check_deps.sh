@@ -34,7 +34,7 @@ for pkg in fastapi uvicorn httpx aiofiles pydantic requests beautifulsoup4 openp
     if python3 -c "import $pkg" 2>/dev/null; then
         echo "✓"
     else
-        echo "✗ (install: pip install $pkg)"
+        echo "✗ (install: python3 -m pip install $pkg)"
     fi
 done
 
@@ -54,7 +54,7 @@ printf "  %-25s" "PIL (Pillow)"
 if python3 -c "import PIL" 2>/dev/null; then
     echo "✓"
 else
-    echo "- (install: pip install pillow)"
+    echo "- (install: python3 -m pip install pillow)"
 fi
 
 # Tesseract OCR
