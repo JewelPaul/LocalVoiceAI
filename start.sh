@@ -27,7 +27,22 @@ fi
 echo "  ✓ Python ${PYVER} detected."
 
 # ---------------------------------------------------------------------------
-# 2. Verify pip availability
+# 2. Create / activate virtual environment
+# ---------------------------------------------------------------------------
+echo ""
+echo "→ Setting up virtual environment..."
+if [ ! -d "venv" ]; then
+    python3 -m venv venv
+    echo "  ✓ Virtual environment created."
+else
+    echo "  ✓ Virtual environment already exists."
+fi
+# shellcheck disable=SC1091
+source venv/bin/activate
+echo "  ✓ Virtual environment activated."
+
+# ---------------------------------------------------------------------------
+# 3. Verify pip availability
 # ---------------------------------------------------------------------------
 echo ""
 echo "→ Checking pip availability..."
@@ -40,12 +55,12 @@ fi
 echo "  ✓ pip available (python3 -m pip)."
 
 # ---------------------------------------------------------------------------
-# 3. Create workspace and log directories
+# 4. Create workspace and log directories
 # ---------------------------------------------------------------------------
 mkdir -p logs workspace/files workspace/spreadsheets workspace/downloads
 
 # ---------------------------------------------------------------------------
-# 4. Install Python dependencies
+# 5. Install Python dependencies
 # ---------------------------------------------------------------------------
 echo ""
 echo "→ Installing Python dependencies..."
@@ -62,7 +77,7 @@ fi
 echo "  ✓ Python dependencies installed."
 
 # ---------------------------------------------------------------------------
-# 5. Check Ollama connection
+# 6. Check Ollama connection
 # ---------------------------------------------------------------------------
 echo ""
 echo "→ Checking Ollama connection..."
@@ -79,7 +94,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 6. Resolve server port and check for conflicts
+# 7. Resolve server port and check for conflicts
 # ---------------------------------------------------------------------------
 echo ""
 echo "→ Starting backend server..."
@@ -108,7 +123,7 @@ for i in $(seq 1 20); do
 done
 
 # ---------------------------------------------------------------------------
-# 7. Display running URL
+# 8. Display running URL
 # ---------------------------------------------------------------------------
 echo ""
 echo "╔══════════════════════════════════════╗"
