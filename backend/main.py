@@ -25,6 +25,7 @@ from voice.tts import TTSEngine
 from tool_router.router import ToolRouter
 from tool_router.permissions import PermissionManager
 from logger import ActionLogger
+from utils import extract_tool_call
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -239,7 +240,7 @@ async def handle_chat(ws: WebSocket, msg: dict):
             return
 
         # Check for tool call
-        tool_call = _extract_tool_call(response_text)
+        tool_call = extract_tool_call(response_text)
 
         if tool_call is None:
             # Final answer — stream it to the client
@@ -307,32 +308,6 @@ async def handle_chat(ws: WebSocket, msg: dict):
         "message": "I've completed the requested operations.",
         "role": "assistant",
     })
-
-
-def _extract_tool_call(text: str) -> dict | None:
-    """Extract tool_call JSON from LLM response text by scanning for balanced JSON objects."""
-    import re
-    try:
-        for match in re.finditer(r'\{', text):
-            start = match.start()
-            depth = 0
-            for i, ch in enumerate(text[start:], start):
-                if ch == '{':
-                    depth += 1
-                elif ch == '}':
-                    depth -= 1
-                    if depth == 0:
-                        candidate = text[start:i + 1]
-                        try:
-                            parsed = json.loads(candidate)
-                            if "tool_call" in parsed:
-                                return parsed["tool_call"]
-                        except json.JSONDecodeError:
-                            pass
-                        break
-    except Exception:
-        pass
-    return None
 
 
 if __name__ == "__main__":
