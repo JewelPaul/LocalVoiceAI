@@ -24,7 +24,7 @@ A modular, **fully local** Voice AI Agent Platform. Talk to an LLM running on yo
 
 ## Prerequisites
 
-- **Python 3.9+**
+- **Python 3.10+**
 - **[Ollama](https://ollama.ai)** installed and running (`ollama serve`)
   - Pull a model: `ollama pull qwen2.5:7b`
 - (Optional) **Tesseract OCR** for image text extraction:
@@ -43,7 +43,13 @@ bash start.sh
 
 Then open **http://localhost:8000** in your browser.
 
-> `start.sh` installs Python dependencies, creates workspace directories, and starts the FastAPI server.
+> `start.sh` checks your Python version, installs Python dependencies via `python3 -m pip`, verifies Ollama is running, and starts the FastAPI server. It works on macOS (Apple Silicon), macOS (Intel), and Linux.
+
+If you prefer to install dependencies manually:
+
+```bash
+python3 -m pip install -r backend/requirements.txt
+```
 
 ---
 
