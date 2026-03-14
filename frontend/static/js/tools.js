@@ -74,7 +74,8 @@ class ToolActivityDisplay {
   _formatArgs(args) {
     if (!args || typeof args !== 'object') return '';
     const parts = Object.entries(args).map(([k, v]) => {
-      const val = typeof v === 'string' ? `"${v.substring(0, ToolActivityDisplay.MAX_ARG_DISPLAY_LENGTH)}"` : JSON.stringify(v);
+      const raw = v.substring(0, ToolActivityDisplay.MAX_ARG_DISPLAY_LENGTH);
+      const val = typeof v === 'string' ? `"${raw}${v.length > ToolActivityDisplay.MAX_ARG_DISPLAY_LENGTH ? '…' : ''}"` : JSON.stringify(v);
       return `${k}=${val}`;
     });
     return parts.slice(0, 2).join(', ');

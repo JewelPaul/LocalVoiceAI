@@ -105,8 +105,8 @@ class TTSEngine:
     @staticmethod
     def _write_silence_wav(
         output_path: str,
-        duration_ms: int = TTSEngine.DEFAULT_SILENCE_DURATION_MS,
-        sample_rate: int = TTSEngine.DEFAULT_SAMPLE_RATE,
+        duration_ms: int = 500,
+        sample_rate: int = 16000,
     ):
         n_samples = int(sample_rate * duration_ms / 1000)
         with wave.open(output_path, "w") as wf:

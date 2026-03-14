@@ -5,7 +5,6 @@
 
 // Named constants
 const MAX_CONTEXT_MESSAGES = 20;
-const MIN_RECORDING_SIZE_BYTES = 1000;
 const state = {
   ws: null,
   wsReady: false,

@@ -59,7 +59,7 @@ class PermissionManager:
         for perm_key in PERMISSION_MAP:
             if perm_key in tool_name:
                 return self._permissions.get(perm_key, False)
-        return True  # Tools not mapped to a permission are allowed by default
+        return False  # Tools not mapped to a permission are denied by default
 
     def check_by_key(self, permission_key: str) -> bool:
         return self._permissions.get(permission_key, False)
