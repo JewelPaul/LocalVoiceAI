@@ -49,6 +49,11 @@ mkdir -p logs workspace/files workspace/spreadsheets workspace/downloads
 # ---------------------------------------------------------------------------
 echo ""
 echo "→ Installing Python dependencies..."
+if ! python3 -m pip install --upgrade pip -q; then
+    echo "  ✗ Failed to upgrade pip."
+    echo "    Try running manually: python3 -m pip install --upgrade pip"
+    exit 1
+fi
 if ! python3 -m pip install -r backend/requirements.txt -q; then
     echo "  ✗ Failed to install Python dependencies."
     echo "    Try running manually: python3 -m pip install -r backend/requirements.txt"
