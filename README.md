@@ -36,7 +36,7 @@ A modular, **fully local** Voice AI Agent Platform. Talk to an LLM running on yo
 ## Quick Start
 
 ```bash
-git clone https://github.com/youruser/LocalVoiceAI.git
+git clone https://github.com/JewelPaul/LocalVoiceAI.git
 cd LocalVoiceAI
 bash start.sh
 ```
